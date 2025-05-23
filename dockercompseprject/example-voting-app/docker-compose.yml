@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:
+  vote:
+    image: voteservice
+    depends_on:
+      redis:
+        condition: service_healthy 
+    ports:
+      - "8082:80"  # Changed from 8080 to avoid port conflict
+    networks:
+      - front-tier
+      - back-tier
+
+  result:
+    image: resultservice
+    depends_on:
+      db:
+        condition: service_healthy 
+    ports:
+      - "8081:4000"
+    networks:
+      - front-tier
+      - back-tier
+
+  worker:
+    image: workerservice1
+    depends_on:
+      redis:
+        condition: service_healthy 
+      db:
+        condition: service_healthy 
+    networks:
+      - back-tier
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - "./healthchecks:/healthchecks"
+    healthcheck:
+      test: /healthchecks/redis.sh
+      interval: 5s
+    networks:
+      - back-tier
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./healthchecks:/healthchecks
+    healthcheck:
+      test: /healthchecks/postgres.sh
+      interval: 5s
+    networks:
+      - back-tier
+
+volumes:
+  db-data:
+
+networks:
+  front-tier:
+  back-tier:

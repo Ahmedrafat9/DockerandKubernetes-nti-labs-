@@ -1,38 +1,21 @@
 pipeline {
     agent any
 
-
-    stages {
-        stage('Checkout Code') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Build') {
-            steps {
-                echo "Building the application..."
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo "Running tests..."
-            }
-        }
-
-        
+    parameters {
+        string(name: 'ENV', defaultValue: 'dev', description: 'Deployment environment')
+        booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run tests?')
+        choice(name: 'BRANCH', choices: ['main', 'dev', 'feature'], description: 'Select Git branch')
     }
 
-    post {
-        always {
-            echo "Pipeline finished."
-        }
-        success {
-            echo "Pipeline completed successfully!"
-        }
-        failure {
-            echo "Pipeline failed!"
+    stages {
+        stage('Print Parameters') {
+            steps {
+                script {
+                    echo "Environment: ${params.ENV}"
+                    echo "Run Tests: ${params.RUN_TESTS}"
+                    echo "Branch selected: ${params.BRANCH}"
+                }
+            }
         }
     }
 }

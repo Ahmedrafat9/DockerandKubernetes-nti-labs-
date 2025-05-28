@@ -1,20 +1,12 @@
 pipeline {
-    agent any
+    agent { label 'ec2-slave' }  // <-- use your EC2 agent label here
+
     stages {
-        stage('Build') {
+        stage('Example') {
             steps {
-                echo "Building branch ${env.BRANCH_NAME}"
-            }
-        }
-    stage('Show Fetched Branches') {    
-        steps {
-                script {
-                    echo "Current Branch: ${env.BRANCH_NAME}"
-                    sh '''
-                        echo "All fetched branches:"
-                        git branch -r
-                    '''
-                }
+                sh 'echo Running on EC2 slave node'
+                sh 'uname -a'
+                // your build or deploy steps here
             }
         }
     }

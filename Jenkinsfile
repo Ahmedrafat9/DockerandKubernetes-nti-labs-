@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'ec2-slave' }  // <-- use your EC2 agent label here
+    agent { label 'ec2-agent' }  // <-- use your EC2 agent label here
 
     stages {
         stage('Example') {

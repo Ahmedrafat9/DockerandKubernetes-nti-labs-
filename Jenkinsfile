@@ -1,24 +1,23 @@
 pipeline {
   agent {
     docker {
-      image 'docker:24.0.2-cli'  // Alpine-based Docker image with CLI
+      image 'docker:24.0.2-cli'
       args '-v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
 
   environment {
-    DOCKER_IMAGE = "ahmedrafat/myapp"
-    DOCKER_TAG = "${BUILD_NUMBER}"
+    HOME = "${env.WORKSPACE}" // ✅ So Docker writes config to a writable location
+    IMAGE_NAME = "ahmedrafat/myapp"
+    TAG = "${BUILD_NUMBER}"
   }
 
   stages {
-    
-
     stage('Build Docker Image') {
       steps {
         sh '''
-          docker --config $HOME/.docker build -t ahmedrafat/myapp:${BUILD_NUMBER} .
-
+          mkdir -p $HOME/.docker
+          docker --config $HOME/.docker build -t $IMAGE_NAME:$TAG .
         '''
       }
     }
@@ -36,19 +35,15 @@ pipeline {
     stage('Push Docker Image') {
       steps {
         sh '''
-          docker push $DOCKER_IMAGE:$DOCKER_TAG
+          docker --config $HOME/.docker push $IMAGE_NAME:$TAG
         '''
       }
     }
   }
 
   post {
-    success {
-      echo " Docker image $DOCKER_IMAGE:$DOCKER_TAG pushed successfully."
-    }
-    failure {
-      echo "Build or push failed."
+    always {
+      echo 'Build and push completed (or failed).'
     }
   }
 }
-

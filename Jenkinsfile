@@ -17,7 +17,8 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         sh '''
-          docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+          docker --config $HOME/.docker build -t ahmedrafat/myapp:${BUILD_NUMBER} .
+
         '''
       }
     }
@@ -26,7 +27,7 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh '''
-            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+            docker --config $HOME/.docker login -u $DOCKER_USER -p $DOCKER_PASS
           '''
         }
       }

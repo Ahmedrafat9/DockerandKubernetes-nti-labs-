@@ -1,21 +1,53 @@
 pipeline {
-    agent any
+  agent {
+    docker {
+      image 'docker:24.0.2-cli'  // Alpine-based Docker image with CLI
+      args '-v /var/run/docker.sock:/var/run/docker.sock'
+    }
+  }
 
-    parameters {
-        string(name: 'ENV', defaultValue: 'dev', description: 'Deployment environment')
-        booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run tests?')
-        choice(name: 'BRANCH', choices: ['main', 'dev', 'feature'], description: 'Select Git branch')
+  environment {
+    DOCKER_IMAGE = "ahmedrafat/myapp"
+    DOCKER_TAG = "${BUILD_NUMBER}"
+  }
+
+  stages {
+    
+
+    stage('Build Docker Image') {
+      steps {
+        sh '''
+          docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+        '''
+      }
     }
 
-    stages {
-        stage('Print Parameters') {
-            steps {
-                script {
-                    echo "Environment: ${params.ENV}"
-                    echo "Run Tests: ${params.RUN_TESTS}"
-                    echo "Branch selected: ${params.BRANCH}"
-                }
-            }
+    stage('Login to DockerHub') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh '''
+            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+          '''
         }
+      }
     }
+
+    stage('Push Docker Image') {
+      steps {
+        sh '''
+          docker push $DOCKER_IMAGE:$DOCKER_TAG
+        '''
+      }
+    }
+  }
+
+  post {
+    success {
+      echo " Docker image $DOCKER_IMAGE:$DOCKER_TAG pushed successfully."
+    }
+    failure {
+      echo "Build or push failed."
+    }
+  }
 }
+
